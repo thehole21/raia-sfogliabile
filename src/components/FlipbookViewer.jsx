@@ -1,28 +1,43 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FlipBookEngine } from '../engine/FlipBookEngine.js';
+import { ShareModal } from './ShareModal.jsx';
+import { PDFBuilder } from '../engine/PDFBuilder.js';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Volume2,
   VolumeX,
   Grid,
+  List,
   ZoomIn,
-  RotateCcw,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
   Play,
   Pause,
-  Maximize2,
-  X
+  Download,
+  Share2,
+  Printer,
+  RotateCcw,
+  X,
+  BookOpen
 } from 'lucide-react';
 
-export function FlipbookViewer({ pages, soundProfile, theme, showToast }) {
+export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showToast }) {
   const mountRef = useRef(null);
   const engineRef = useRef(null);
-  const [currentSpread, setCurrentSpread] = useState(1);
+  const [currentSpread, setCurrentSpread] = useState(0);
   const [totalSpreads, setTotalSpreads] = useState(1);
+  const [pageInputVal, setPageInputVal] = useState('1');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1.0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isThumbnailsOpen, setIsThumbnailsOpen] = useState(false);
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const autoplayTimerRef = useRef(null);
 
   useEffect(() => {
@@ -33,8 +48,16 @@ export function FlipbookViewer({ pages, soundProfile, theme, showToast }) {
         soundEnabled: soundEnabled,
         soundProfile: soundProfile,
         onPageChange: (info) => {
-          setCurrentSpread(info.currentSpread + 1);
+          setCurrentSpread(info.currentSpread);
           setTotalSpreads(info.totalSpreads);
+          // Calculate human page label (e.g. "1" or "2-3")
+          if (info.currentSpread === 0) {
+            setPageInputVal('1');
+          } else {
+            const leftP = info.currentSpread * 2;
+            const rightP = Math.min(pages.length, leftP + 1);
+            setPageInputVal(leftP === rightP ? `${leftP}` : `${leftP}-${rightP}`);
+          }
         }
       });
     }
@@ -48,8 +71,27 @@ export function FlipbookViewer({ pages, soundProfile, theme, showToast }) {
     };
   }, [pages, soundProfile]);
 
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
   const handleNext = () => engineRef.current?.next();
   const handlePrev = () => engineRef.current?.prev();
+  const handleFirst = () => engineRef.current?.first();
+  const handleLast = () => engineRef.current?.last();
+
+  const handlePageJump = (e) => {
+    e.preventDefault();
+    const val = parseInt(pageInputVal.split('-')[0], 10);
+    if (!isNaN(val)) {
+      engineRef.current?.goToPage(val);
+    }
+  };
 
   const toggleSound = () => {
     const next = !soundEnabled;
@@ -59,7 +101,13 @@ export function FlipbookViewer({ pages, soundProfile, theme, showToast }) {
   };
 
   const handleZoomIn = () => {
-    const nextZoom = zoomLevel >= 1.8 ? 1.0 : zoomLevel + 0.35;
+    const nextZoom = Math.min(2.5, zoomLevel + 0.25);
+    setZoomLevel(nextZoom);
+    engineRef.current?.setZoom(nextZoom);
+  };
+
+  const handleZoomOut = () => {
+    const nextZoom = Math.max(0.8, zoomLevel - 0.25);
     setZoomLevel(nextZoom);
     engineRef.current?.setZoom(nextZoom);
   };
@@ -97,104 +145,310 @@ export function FlipbookViewer({ pages, soundProfile, theme, showToast }) {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleQuickDownloadPdf = async () => {
+    if (pages.length === 0) return;
+    showToast('Generazione PDF in corso...');
+    try {
+      const blob = await PDFBuilder.generate(pages, { title: catalogTitle });
+      const filename = (catalogTitle || 'catalogo-raia')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-') + '.pdf';
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('PDF scaricato con successo!');
+    } catch (e) {
+      showToast('Errore durante la creazione del PDF.');
+    }
+  };
+
   const goToPage = (index) => {
     const spreadIdx = index === 0 ? 0 : Math.ceil(index / 2);
     engineRef.current?.goToSpread(spreadIdx);
   };
 
   return (
-    <div className={`viewer-wrapper theme-${theme}`}>
-      <div id="viewer-container">
+    <div className={`fliphtml5-wrapper theme-${theme}`}>
+      {/* FlipHTML5 Top Branding Bar */}
+      <div className="fliphtml5-topbar">
+        <div className="fliphtml5-top-brand">
+          <img src="/raia-logo.png" alt="Raia" className="fliphtml5-top-logo" />
+          <span className="fliphtml5-top-title">{catalogTitle || 'Raia Prestige Lookbook'}</span>
+        </div>
+
+        <div className="fliphtml5-top-actions">
+          <button
+            className="fliphtml5-top-btn"
+            onClick={() => setIsShareModalOpen(true)}
+            title="Condividi o incorpora flipbook"
+          >
+            <Share2 size={15} />
+            <span>Condividi</span>
+          </button>
+
+          <button
+            className="fliphtml5-top-btn"
+            onClick={handleQuickDownloadPdf}
+            title="Scarica PDF"
+          >
+            <Download size={15} />
+            <span>PDF</span>
+          </button>
+        </div>
+      </div>
+
+      {/* FlipHTML5 Central Stage Area */}
+      <div className="fliphtml5-stage-area">
         {pages.length === 0 ? (
           <div className="viewer-empty-state">
             <h3>Nessuna pagina nel catalogo</h3>
             <p>Carica le tue immagini nello Studio o clicca "Carica Demo Raia" in alto.</p>
           </div>
         ) : (
-          <div ref={mountRef} className="flipbook-mount" />
+          <>
+            {/* Side Navigation Arrow Left */}
+            <button
+              className="fliphtml5-side-nav fliphtml5-side-prev"
+              onClick={handlePrev}
+              disabled={currentSpread <= 0}
+              title="Pagina precedente"
+            >
+              <ChevronLeft size={36} />
+            </button>
+
+            {/* Mount for 3D Book */}
+            <div id="viewer-container">
+              <div ref={mountRef} className="flipbook-mount" />
+            </div>
+
+            {/* Side Navigation Arrow Right */}
+            <button
+              className="fliphtml5-side-nav fliphtml5-side-next"
+              onClick={handleNext}
+              disabled={currentSpread >= totalSpreads - 1}
+              title="Pagina successiva"
+            >
+              <ChevronRight size={36} />
+            </button>
+          </>
         )}
       </div>
 
+      {/* FlipHTML5 Classic Bottom Navigation Bar */}
       {pages.length > 0 && (
-        <>
-          {/* Floating Luxury Controls Bar */}
-          <div className="viewer-controls">
-            <button className="v-btn" onClick={handlePrev} title="Pagina Precedente (Freccia Sinistra)">
-              <ChevronLeft size={20} />
-            </button>
+        <div className="fliphtml5-bottom-bar">
+          <div className="fh5-bar-container">
+            {/* Left Tools Group: Table of Contents & Thumbnails */}
+            <div className="fh5-group">
+              <button
+                className={`fh5-btn ${isTocOpen ? 'active' : ''}`}
+                onClick={() => {
+                  setIsTocOpen(!isTocOpen);
+                  setIsThumbnailsOpen(false);
+                }}
+                title="Sommario & Indice Capitoli"
+              >
+                <List size={18} />
+              </button>
 
-            <div className="v-indicator">
-              <span>{currentSpread}</span> / <span>{totalSpreads}</span>
-            </div>
-
-            <button className="v-btn" onClick={handleNext} title="Pagina Successiva (Freccia Destra / Clic)">
-              <ChevronRight size={20} />
-            </button>
-
-            <div className="v-divider" />
-
-            <button className="v-btn" onClick={toggleSound} title="Suono Carta Realistico">
-              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            </button>
-
-            <button
-              className="v-btn"
-              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-              title="Miniature Pagine"
-            >
-              <Grid size={18} />
-            </button>
-
-            <button className="v-btn" onClick={handleZoomIn} title="Ingrandisci">
-              <ZoomIn size={18} />
-            </button>
-
-            <button
-              className="v-btn btn-zoom-label"
-              onClick={handleZoomReset}
-              title="Ripristina Zoom al 100%"
-            >
-              {Math.round(zoomLevel * 100)}%
-            </button>
-
-            <button
-              className={`v-btn ${isPlaying ? 'active' : ''}`}
-              onClick={toggleAutoplay}
-              title="Presentazione Automatica"
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            </button>
-
-            <button className="v-btn" onClick={toggleFullscreen} title="Schermo Intero">
-              <Maximize2 size={18} />
-            </button>
-          </div>
-
-          {/* Thumbnails Drawer */}
-          <div className={`thumbnails-drawer ${isDrawerOpen ? 'open' : ''}`}>
-            <div className="thumbnails-header">
-              <span>Indice Pagine Catalogo</span>
-              <button className="t-close" onClick={() => setIsDrawerOpen(false)}>
-                <X size={18} />
+              <button
+                className={`fh5-btn ${isThumbnailsOpen ? 'active' : ''}`}
+                onClick={() => {
+                  setIsThumbnailsOpen(!isThumbnailsOpen);
+                  setIsTocOpen(false);
+                }}
+                title="Miniature Pagine"
+              >
+                <Grid size={18} />
               </button>
             </div>
-            <div className="thumbnails-scroll">
-              {pages.map((p, idx) => (
-                <div
-                  key={p.id || idx}
-                  className="thumb-item"
-                  onClick={() => goToPage(idx)}
-                >
-                  <img src={p.src} alt={p.title || `Pagina ${idx + 1}`} />
-                  <div className="thumb-label">
-                    {idx === 0 ? 'Copertina' : (idx === pages.length - 1 ? 'Retro' : `Pag. ${idx}`)}
-                  </div>
-                </div>
-              ))}
+
+            <div className="fh5-separator" />
+
+            {/* Center Navigation Group: First, Prev, Page Input, Next, Last */}
+            <div className="fh5-group fh5-nav-group">
+              <button
+                className="fh5-btn"
+                onClick={handleFirst}
+                disabled={currentSpread <= 0}
+                title="Prima Pagina"
+              >
+                <ChevronsLeft size={18} />
+              </button>
+
+              <button
+                className="fh5-btn"
+                onClick={handlePrev}
+                disabled={currentSpread <= 0}
+                title="Pagina Precedente"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <form onSubmit={handlePageJump} className="fh5-page-jump-box">
+                <input
+                  type="text"
+                  className="fh5-page-input"
+                  value={pageInputVal}
+                  onChange={(e) => setPageInputVal(e.target.value)}
+                  title="Digita il numero di pagina e premi Invio"
+                />
+                <span className="fh5-page-total">/ {pages.length}</span>
+              </form>
+
+              <button
+                className="fh5-btn"
+                onClick={handleNext}
+                disabled={currentSpread >= totalSpreads - 1}
+                title="Pagina Successiva"
+              >
+                <ChevronRight size={18} />
+              </button>
+
+              <button
+                className="fh5-btn"
+                onClick={handleLast}
+                disabled={currentSpread >= totalSpreads - 1}
+                title="Ultima Pagina"
+              >
+                <ChevronsRight size={18} />
+              </button>
+            </div>
+
+            <div className="fh5-separator" />
+
+            {/* Right Group: Zoom, Autoplay, Sound, Print, Share, Fullscreen */}
+            <div className="fh5-group">
+              <button
+                className={`fh5-btn ${isPlaying ? 'active' : ''}`}
+                onClick={toggleAutoplay}
+                title={isPlaying ? 'Pausa Presentazione' : 'Riproduci Presentazione Automatica'}
+              >
+                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              </button>
+
+              <button
+                className="fh5-btn"
+                onClick={toggleSound}
+                title={soundEnabled ? 'Disattiva Suono Carta' : 'Attiva Suono Carta'}
+              >
+                {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+              </button>
+
+              <button className="fh5-btn" onClick={handleZoomIn} title="Ingrandisci (Zoom In)">
+                <ZoomIn size={18} />
+              </button>
+
+              <button className="fh5-btn" onClick={handleZoomOut} title="Riduci (Zoom Out)">
+                <ZoomOut size={18} />
+              </button>
+
+              <button className="fh5-btn" onClick={handleZoomReset} title="Ripristina 100%">
+                <RotateCcw size={16} />
+              </button>
+
+              <button className="fh5-btn" onClick={handlePrint} title="Stampa Catalogo">
+                <Printer size={18} />
+              </button>
+
+              <button
+                className="fh5-btn"
+                onClick={() => setIsShareModalOpen(true)}
+                title="Condividi & QR Code"
+              >
+                <Share2 size={18} />
+              </button>
+
+              <button className="fh5-btn" onClick={toggleFullscreen} title="Schermo Intero">
+                {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
+
+      {/* FlipHTML5 Left Side Drawer: Table of Contents (Sommario) */}
+      <div className={`fliphtml5-side-drawer ${isTocOpen ? 'open' : ''}`}>
+        <div className="fh5-drawer-header">
+          <div className="fh5-drawer-title">
+            <BookOpen size={16} color="#852233" />
+            <span>Sommario del Catalogo</span>
+          </div>
+          <button className="fh5-drawer-close" onClick={() => setIsTocOpen(false)}>
+            <X size={16} />
+          </button>
+        </div>
+        <div className="fh5-toc-list">
+          {pages.map((p, idx) => (
+            <div
+              key={p.id || idx}
+              className={`fh5-toc-item ${
+                (currentSpread === 0 && idx === 0) ||
+                (currentSpread > 0 && (idx === currentSpread * 2 - 1 || idx === currentSpread * 2))
+                  ? 'active'
+                  : ''
+              }`}
+              onClick={() => {
+                goToPage(idx);
+                setIsTocOpen(false);
+              }}
+            >
+              <span className="fh5-toc-num">{idx === 0 ? 'Copertina' : `Pag. ${idx + 1}`}</span>
+              <span className="fh5-toc-text">{p.title || `Pagina ${idx + 1}`}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FlipHTML5 Bottom Thumbnails Ribbon Drawer */}
+      <div className={`fliphtml5-thumbnails-bar ${isThumbnailsOpen ? 'open' : ''}`}>
+        <div className="fh5-thumb-bar-header">
+          <span>Panoramica Miniature ({pages.length} pagine)</span>
+          <button className="fh5-drawer-close" onClick={() => setIsThumbnailsOpen(false)}>
+            <X size={16} />
+          </button>
+        </div>
+        <div className="fh5-thumb-ribbon">
+          {pages.map((p, idx) => {
+            const isActive =
+              (currentSpread === 0 && idx === 0) ||
+              (currentSpread > 0 && (idx === currentSpread * 2 - 1 || idx === currentSpread * 2));
+
+            return (
+              <div
+                key={p.id || idx}
+                className={`fh5-ribbon-item ${isActive ? 'active' : ''}`}
+                onClick={() => goToPage(idx)}
+              >
+                <div className="fh5-thumb-img-wrap">
+                  <img src={p.src} alt={p.title || `Pagina ${idx + 1}`} />
+                </div>
+                <span className="fh5-ribbon-label">
+                  {idx === 0 ? 'Copertina' : (idx === pages.length - 1 ? 'Retro' : `Pag. ${idx}`)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Share & Embed Modal (FlipHTML5 Style) */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        catalogTitle={catalogTitle}
+        showToast={showToast}
+      />
     </div>
   );
 }

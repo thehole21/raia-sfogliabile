@@ -186,6 +186,7 @@ export function App() {
             pages={state.pages}
             soundProfile={state.soundProfile}
             theme={state.theme}
+            catalogTitle={state.title}
             showToast={showToast}
           />
         )}

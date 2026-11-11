@@ -1,11 +1,10 @@
-// Raia Standalone Single-File HTML Flipbook Exporter
-// Embeds all images, styles, audio synthesizer, and 3D physics into one portable HTML file
+// Raia FlipHTML5 Standalone Single-File Exporter
+// Compiles full FlipHTML5 experience into 1 portable HTML file with zero server dependencies
 
 export class StandaloneExporter {
   static async export(catalogData, cssRules) {
     const title = catalogData.title || 'Catalogo Esclusivo';
     const subtitle = catalogData.subtitle || 'Design, Stampa e Comunicazione';
-    const client = catalogData.client || '';
     const pagesJson = JSON.stringify(catalogData.pages);
     const soundProfile = catalogData.soundProfile || 'luxury';
 
@@ -14,133 +13,105 @@ export class StandaloneExporter {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${title} | Raia Sfogliabile</title>
+  <title>${title} | Raia FlipHTML5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     ${cssRules}
-    /* Brand specific standalone overrides */
+    /* Standalone resets */
     body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #0f1117;
+      background: #0d0f15;
       font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
       color: #f1f3f7;
       user-select: none;
       -webkit-user-select: none;
     }
-    .standalone-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      background: linear-gradient(180deg, rgba(15,17,23,0.94) 0%, rgba(15,17,23,0) 100%);
-      z-index: 100;
-      pointer-events: none;
-    }
-    .standalone-brand {
-      pointer-events: auto;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .brand-circle {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #852233;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 18px;
-      box-shadow: 0 0 16px rgba(133, 34, 51, 0.4);
-    }
-    .standalone-brand h1 {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 20px;
-      font-weight: 600;
-      margin: 0;
-      color: #ffffff;
-      line-height: 1.1;
-    }
-    .standalone-brand span {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: #852233;
-      font-weight: 700;
-    }
   </style>
 </head>
 <body class="theme-raia">
-  <div class="standalone-header">
-    <div class="standalone-brand">
-      <div class="brand-circle">R</div>
-      <div>
-        <h1>${title}</h1>
-        <span>RAIA • DESIGN & STAMPA</span>
+
+  <!-- FlipHTML5 Topbar -->
+  <div class="fliphtml5-topbar">
+    <div class="fliphtml5-top-brand">
+      <span style="font-weight: 800; color: #852233; font-size: 16px;">RAIA</span>
+      <span class="fliphtml5-top-title">${title}</span>
+    </div>
+    <div class="fliphtml5-top-actions">
+      <button class="fliphtml5-top-btn" id="btn-top-print">Stampa</button>
+      <button class="fliphtml5-top-btn" id="btn-top-fs">Schermo Intero</button>
+    </div>
+  </div>
+
+  <!-- Central Stage with Side Chevrons -->
+  <div class="fliphtml5-stage-area">
+    <button class="fliphtml5-side-nav fliphtml5-side-prev" id="side-prev">❮</button>
+    <div id="viewer-container">
+      <div id="flipbook-mount"></div>
+    </div>
+    <button class="fliphtml5-side-nav fliphtml5-side-next" id="side-next">❯</button>
+  </div>
+
+  <!-- FlipHTML5 Bottom Dock Bar -->
+  <div class="fliphtml5-bottom-bar">
+    <div class="fh5-bar-container">
+      <div class="fh5-group">
+        <button class="fh5-btn" id="btn-toc" title="Sommario">📑</button>
+        <button class="fh5-btn" id="btn-thumbs" title="Miniature">🗂️</button>
+      </div>
+
+      <div class="fh5-separator"></div>
+
+      <div class="fh5-group fh5-nav-group">
+        <button class="fh5-btn" id="btn-first" title="Prima Pagina">|◀</button>
+        <button class="fh5-btn" id="btn-prev" title="Precedente">◀</button>
+        <div class="fh5-page-jump-box">
+          <input type="text" id="page-jump-input" class="fh5-page-input" value="1" />
+          <span class="fh5-page-total" id="tot-pages-label">/ 1</span>
+        </div>
+        <button class="fh5-btn" id="btn-next" title="Successiva">▶</button>
+        <button class="fh5-btn" id="btn-last" title="Ultima Pagina">▶|</button>
+      </div>
+
+      <div class="fh5-separator"></div>
+
+      <div class="fh5-group">
+        <button class="fh5-btn" id="btn-play" title="Presentazione">▶</button>
+        <button class="fh5-btn" id="btn-sound" title="Audio">🔊</button>
+        <button class="fh5-btn" id="btn-zoom-in" title="Zoom +">🔍+</button>
+        <button class="fh5-btn" id="btn-zoom-out" title="Zoom -">🔍-</button>
+        <button class="fh5-btn" id="btn-fs" title="Schermo Intero">⛶</button>
       </div>
     </div>
-    <div style="pointer-events: auto; font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.5); padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
-      Frecce tastiera o trascina per sfogliare
-    </div>
   </div>
 
-  <div id="viewer-container">
-    <div id="flipbook-mount"></div>
+  <!-- Left Drawer: Table of Contents -->
+  <div class="fliphtml5-side-drawer" id="side-drawer">
+    <div class="fh5-drawer-header">
+      <div class="fh5-drawer-title">Sommario</div>
+      <button class="fh5-drawer-close" id="close-drawer">&times;</button>
+    </div>
+    <div class="fh5-toc-list" id="toc-list"></div>
   </div>
 
-  <div class="viewer-controls" id="viewer-controls">
-    <button class="v-btn" id="btn-prev" title="Pagina Precedente">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-    </button>
-    <div class="v-indicator">
-      <span id="cur-spread">1</span> / <span id="tot-spread">1</span>
+  <!-- Bottom Drawer: Thumbnails Ribbon -->
+  <div class="fliphtml5-thumbnails-bar" id="thumbs-bar">
+    <div class="fh5-thumb-bar-header">
+      <span>Miniature Pagine</span>
+      <button class="fh5-drawer-close" id="close-thumbs">&times;</button>
     </div>
-    <button class="v-btn" id="btn-next" title="Pagina Successiva">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
-    </button>
-    <div class="v-divider"></div>
-    <button class="v-btn" id="btn-sound" title="Suono Carta">
-      <svg id="icon-sound-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-      <svg id="icon-sound-off" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-    </button>
-    <button class="v-btn" id="btn-thumbnails" title="Miniature">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
-    </button>
-    <button class="v-btn" id="btn-zoom-in" title="Zoom">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-    </button>
-    <button class="v-btn" id="btn-fullscreen" title="Schermo Intero">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-    </button>
-  </div>
-
-  <div class="thumbnails-drawer" id="thumbnails-drawer">
-    <div class="thumbnails-header">
-      <span>Pagine Catalogo</span>
-      <button class="t-close" id="btn-close-thumbnails">&times;</button>
-    </div>
-    <div class="thumbnails-scroll" id="thumbnails-list"></div>
+    <div class="fh5-thumb-ribbon" id="thumbs-ribbon"></div>
   </div>
 
   <script>
-    // Procedural sound synthesizer
     class SoundSynthesizer {
       constructor() {
         this.ctx = null;
         this.enabled = true;
         this.volume = 0.75;
-        this.profile = '${soundProfile}';
       }
       init() {
         if (!this.ctx) {
@@ -154,9 +125,9 @@ export class StandaloneExporter {
         this.init();
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
-        const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.volume, now);
-        mainGain.connect(this.ctx.destination);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(this.volume, now);
+        gain.connect(this.ctx.destination);
         const dur = 0.38;
         const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
         const data = buf.getChannelData(0);
@@ -179,12 +150,11 @@ export class StandaloneExporter {
         env.gain.exponentialRampToValueAtTime(0.001, now + dur);
         src.connect(bp);
         bp.connect(env);
-        env.connect(mainGain);
+        env.connect(gain);
         src.start(now);
       }
     }
 
-    // 3D FlipBook Engine
     class FlipBookEngine {
       constructor(container) {
         this.container = container;
@@ -192,7 +162,7 @@ export class StandaloneExporter {
         this.currentIndex = 0;
         this.isAnimating = false;
         this.sound = new SoundSynthesizer();
-        this.zoom = 1;
+        this.zoom = 1.0;
         this.init();
       }
       init() {
@@ -204,8 +174,8 @@ export class StandaloneExporter {
               <div class="fb-sheet-face fb-sheet-front" id="fb-front-face"><div class="fb-page-content" id="fb-front-content"></div><div class="fb-page-lighting" id="fb-front-lighting"></div></div>
               <div class="fb-sheet-face fb-sheet-back" id="fb-back-face"><div class="fb-page-content" id="fb-back-content"></div><div class="fb-page-lighting" id="fb-back-lighting"></div></div>
             </div>
-            <div class="fb-edges fb-edges-left" id="fb-edges-l"></div>
-            <div class="fb-edges fb-edges-right" id="fb-edges-r"></div>
+            <div class="fb-edges fb-edges-left"></div>
+            <div class="fb-edges fb-edges-right"></div>
             <div class="fb-spine"></div>
           </div></div></div>\`;
         this.book = this.container.querySelector('.fb-book');
@@ -216,8 +186,6 @@ export class StandaloneExporter {
         this.backContent = this.container.querySelector('#fb-back-content');
         this.frontLighting = this.container.querySelector('#fb-front-lighting');
         this.backLighting = this.container.querySelector('#fb-back-lighting');
-        this.edgesLeft = this.container.querySelector('#fb-edges-l');
-        this.edgesRight = this.container.querySelector('#fb-edges-r');
 
         this.container.querySelector('.fb-spread-right').addEventListener('click', () => this.next());
         this.container.querySelector('.fb-spread-left').addEventListener('click', () => this.prev());
@@ -258,27 +226,31 @@ export class StandaloneExporter {
           this.book.classList.remove('fb-state-closed-end');
           this.leftContent.innerHTML = '';
           this.rightContent.innerHTML = this.renderHTML(spread.right, false);
-          this.edgesLeft.style.display = 'none';
-          this.edgesRight.style.display = 'block';
         } else if (this.currentIndex >= total - 1 && !spread.right) {
           this.book.classList.remove('fb-state-closed-start');
           this.book.classList.add('fb-state-closed-end');
           this.leftContent.innerHTML = this.renderHTML(spread.left, true);
           this.rightContent.innerHTML = '';
-          this.edgesLeft.style.display = 'block';
-          this.edgesRight.style.display = 'none';
         } else {
           this.book.classList.remove('fb-state-closed-start');
           this.book.classList.remove('fb-state-closed-end');
           this.leftContent.innerHTML = this.renderHTML(spread.left, true);
           this.rightContent.innerHTML = this.renderHTML(spread.right, false);
-          this.edgesLeft.style.display = 'block';
-          this.edgesRight.style.display = 'block';
         }
         this.turner.style.display = 'none';
-        document.getElementById('cur-spread').textContent = this.currentIndex + 1;
-        document.getElementById('tot-spread').textContent = total;
+
+        const input = document.getElementById('page-jump-input');
+        if (input) {
+          if (this.currentIndex === 0) input.value = '1';
+          else {
+            const l = this.currentIndex * 2;
+            const r = Math.min(this.pages.length, l + 1);
+            input.value = l === r ? l : l + '-' + r;
+          }
+        }
       }
+      first() { this.goTo(0); }
+      last() { this.goTo(this.getTotalSpreads() - 1); }
       next() {
         if (this.currentIndex >= this.getTotalSpreads() - 1 || this.isAnimating) return;
         this.flip(this.currentIndex + 1, 1);
@@ -332,6 +304,10 @@ export class StandaloneExporter {
         };
         requestAnimationFrame(step);
       }
+      setZoom(z) {
+        this.zoom = z;
+        this.book.style.transform = 'scale(' + z + ')';
+      }
     }
 
     const pages = ${pagesJson};
@@ -340,27 +316,83 @@ export class StandaloneExporter {
       const book = new FlipBookEngine(mount);
       book.loadPages(pages);
 
+      document.getElementById('tot-pages-label').textContent = '/ ' + pages.length;
+
+      // Nav buttons
       document.getElementById('btn-next').addEventListener('click', () => book.next());
       document.getElementById('btn-prev').addEventListener('click', () => book.prev());
+      document.getElementById('side-next').addEventListener('click', () => book.next());
+      document.getElementById('side-prev').addEventListener('click', () => book.prev());
+      document.getElementById('btn-first').addEventListener('click', () => book.first());
+      document.getElementById('btn-last').addEventListener('click', () => book.last());
 
-      const tList = document.getElementById('thumbnails-list');
-      pages.forEach((p, i) => {
-        const item = document.createElement('div');
-        item.className = 'thumb-item';
-        item.innerHTML = '<img src="' + p.src + '" /><div class="thumb-label">' + (i === 0 ? 'Copertina' : 'Pag. ' + i) + '</div>';
-        item.addEventListener('click', () => {
-          book.goTo(i === 0 ? 0 : Math.ceil(i / 2));
-        });
-        tList.appendChild(item);
+      // Zoom
+      document.getElementById('btn-zoom-in').addEventListener('click', () => book.setZoom(Math.min(2.5, book.zoom + 0.25)));
+      document.getElementById('btn-zoom-out').addEventListener('click', () => book.setZoom(Math.max(0.8, book.zoom - 0.25)));
+
+      // Audio toggle
+      let soundOn = true;
+      document.getElementById('btn-sound').addEventListener('click', () => {
+        soundOn = !soundOn;
+        book.sound.enabled = soundOn;
+        document.getElementById('btn-sound').textContent = soundOn ? '🔊' : '🔇';
       });
 
-      const drawer = document.getElementById('thumbnails-drawer');
-      document.getElementById('btn-thumbnails').addEventListener('click', () => drawer.classList.toggle('open'));
-      document.getElementById('btn-close-thumbnails').addEventListener('click', () => drawer.classList.remove('open'));
-      document.getElementById('btn-fullscreen').addEventListener('click', () => {
+      // Presentation
+      let playInterval = null;
+      document.getElementById('btn-play').addEventListener('click', () => {
+        if (playInterval) {
+          clearInterval(playInterval);
+          playInterval = null;
+          document.getElementById('btn-play').textContent = '▶';
+        } else {
+          document.getElementById('btn-play').textContent = '⏸';
+          playInterval = setInterval(() => {
+            if (book.currentIndex >= book.getTotalSpreads() - 1) book.goTo(0);
+            else book.next();
+          }, 4200);
+        }
+      });
+
+      // Print
+      document.getElementById('btn-top-print').addEventListener('click', () => window.print());
+
+      // Fullscreen
+      const toggleFs = () => {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen();
         else document.exitFullscreen();
+      };
+      document.getElementById('btn-fs').addEventListener('click', toggleFs);
+      document.getElementById('btn-top-fs').addEventListener('click', toggleFs);
+
+      // TOC
+      const tocList = document.getElementById('toc-list');
+      const sideDrawer = document.getElementById('side-drawer');
+      pages.forEach((p, i) => {
+        const item = document.createElement('div');
+        item.className = 'fh5-toc-item';
+        item.innerHTML = '<span class="fh5-toc-num">' + (i === 0 ? 'Cop.' : 'P.' + (i + 1)) + '</span><span class="fh5-toc-text">' + (p.title || 'Pagina ' + (i + 1)) + '</span>';
+        item.addEventListener('click', () => {
+          book.goTo(i === 0 ? 0 : Math.ceil(i / 2));
+          sideDrawer.classList.remove('open');
+        });
+        tocList.appendChild(item);
       });
+      document.getElementById('btn-toc').addEventListener('click', () => sideDrawer.classList.toggle('open'));
+      document.getElementById('close-drawer').addEventListener('click', () => sideDrawer.classList.remove('open'));
+
+      // Thumbnails ribbon
+      const thumbsBar = document.getElementById('thumbs-bar');
+      const ribbon = document.getElementById('thumbs-ribbon');
+      pages.forEach((p, i) => {
+        const item = document.createElement('div');
+        item.className = 'fh5-ribbon-item';
+        item.innerHTML = '<div class="fh5-thumb-img-wrap"><img src="' + p.src + '" /></div><span class="fh5-ribbon-label">' + (i === 0 ? 'Cop.' : 'P.' + i) + '</span>';
+        item.addEventListener('click', () => book.goTo(i === 0 ? 0 : Math.ceil(i / 2)));
+        ribbon.appendChild(item);
+      });
+      document.getElementById('btn-thumbs').addEventListener('click', () => thumbsBar.classList.toggle('open'));
+      document.getElementById('close-thumbs').addEventListener('click', () => thumbsBar.classList.remove('open'));
     });
   </script>
 </body>

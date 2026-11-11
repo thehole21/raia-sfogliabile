@@ -182,6 +182,25 @@ export class FlipBookEngine {
     }
   }
 
+  first() {
+    this.goToSpread(0);
+  }
+
+  last() {
+    this.goToSpread(this.getTotalSpreads() - 1);
+  }
+
+  goToPage(pageNumber) {
+    const num = parseInt(pageNumber, 10);
+    if (isNaN(num)) return;
+    if (num <= 1) {
+      this.goToSpread(0);
+    } else {
+      const targetSpread = Math.ceil((num - 1) / 2);
+      this.goToSpread(targetSpread);
+    }
+  }
+
   next() {
     const totalSpreads = this.getTotalSpreads();
     if (this.currentIndex >= totalSpreads - 1 || this.isAnimating) return;
