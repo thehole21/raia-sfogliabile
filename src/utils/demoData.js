@@ -38,7 +38,7 @@ export class DemoCatalogGenerator {
       text('Etichetta tecniche','TECNICHE & NOBILITAZIONI / 02',9,8,82,7,'#852233',{bold:true,letterSpacing:1.3}),
       text('Titolo finiture','Carte Speciali\n& Trattamenti Superficiali',9,14,82,23,'#29272c',{fontFamily:'Georgia',bold:true,lineHeight:1.15}),
       ...[{x:9,y:31,name:'Lamina a Caldo Oro & Rame',bg:'#24252c',edge:'#d4a359',color:'#f0ddba'}, {x:52,y:31,name:'Vernice UV a Spessore',bg:'#17191f',edge:'#852233',color:'#ffffff'}, {x:9,y:57,name:'Rilievo a Secco / Debossing',bg:'#eeebe6',edge:'#bfb9b1',color:'#444044'},{x:52,y:57,name:'Brossura Filo Refe Dorata',bg:'#34252a',edge:'#d4a359',color:'#e1c18e'}].flatMap((sw,i)=>[
-        shape('Campione '+(i+1),sw.x,sw.y,39,23,sw.bg,sw.edge,1),text('Sigla campione '+(i+1),'R',sw.x+4,sw.y+3,31,34,sw.color,{fontFamily:'Georgia',align:'center',bold:true}),text('Nome campione '+(i+1),sw.name,sw.x+3,sw.y+17,33,6.5,sw.color)
+        shape('Campione '+(i+1),sw.x,sw.y,39,23,sw.bg,sw.edge,1),image('Monogramma originale campione '+(i+1),emblem,sw.x+13,sw.y+3,13,10),text('Nome campione '+(i+1),sw.name,sw.x+3,sw.y+17,33,6.5,sw.color)
       ]),
       text('Nota lavorazioni','Ogni lavorazione viene calibrata per esaltare la resa visiva e tattile.',9,86,82,9,'#65616b',{fontFamily:'Georgia',italic:true}),folio(4)
     ]};
