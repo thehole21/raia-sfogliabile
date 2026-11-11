@@ -15,6 +15,7 @@ export function App() {
     title: 'Raia Prestige Lookbook',
     subtitle: 'Design, Stampa e Comunicazione',
     theme: 'raia-dark',
+    appearance: { background: '#c8c9cc', accent: '#852233', toolbar: '#292a2d', logo: '/raia-logo.png', duration: 420, volume: .65, showArrows: true, showThumbnails: true, showDownload: true },
     soundProfile: 'luxury',
     soundEnabled: true,
     pages: []
@@ -142,6 +143,7 @@ export function App() {
           subtitle: loaded.subtitle || '',
           theme: loaded.theme || 'raia-dark',
           soundProfile: loaded.soundProfile || 'luxury',
+          appearance: loaded.appearance || prev.appearance,
           pages: loaded.pages || []
         }));
         showToast('Progetto caricato con successo!');
@@ -183,6 +185,7 @@ export function App() {
 
         {activeTab === 'viewer' && (
           <FlipbookViewer
+            appearance={state.appearance}
             pages={state.pages}
             soundProfile={state.soundProfile}
             theme={state.theme}

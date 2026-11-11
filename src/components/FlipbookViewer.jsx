@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FlipBookEngine } from '../engine/FlipBookEngine.js';
 import { ShareModal } from './ShareModal.jsx';
+import { StandaloneExporter } from '../engine/StandaloneExporter.js';
 import { PDFBuilder } from '../engine/PDFBuilder.js';
 import {
   ChevronLeft,
@@ -25,9 +26,14 @@ import {
   BookOpen
 } from 'lucide-react';
 
-export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showToast }) {
+export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showToast, appearance = {}, initialPage = 0 }) {
   const mountRef = useRef(null);
   const engineRef = useRef(null);
+  const [pdfResult, setPdfResult] = useState(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [atEnd, setAtEnd] = useState(false);
+  const [actualPage, setActualPage] = useState(0);
   const [currentSpread, setCurrentSpread] = useState(0);
   const [totalSpreads, setTotalSpreads] = useState(1);
   const [pageInputVal, setPageInputVal] = useState('1');
@@ -45,13 +51,19 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
 
     if (!engineRef.current) {
       engineRef.current = new FlipBookEngine(mountRef.current, {
+        appearance,
+        initialPage,
         soundEnabled: soundEnabled,
         soundProfile: soundProfile,
         onPageChange: (info) => {
+          setActualPage(info.pageIndex);
+          setAtEnd(info.atEnd);
           setCurrentSpread(info.currentSpread);
           setTotalSpreads(info.totalSpreads);
           // Calculate human page label (e.g. "1" or "2-3")
-          if (info.currentSpread === 0) {
+          if (info.portrait) {
+            setPageInputVal(String(info.pageIndex + 1));
+          } else if (info.currentSpread === 0) {
             setPageInputVal('1');
           } else {
             const leftP = info.currentSpread * 2;
@@ -69,23 +81,12 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
 
   }, [pages, soundProfile]);
 
+  useEffect(() => { engineRef.current?.configure(appearance); }, [appearance]);
+
   useEffect(() => () => {
     clearInterval(autoplayTimerRef.current);
     engineRef.current?.destroy();
     engineRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    if (!mountRef.current) return;
-    const area = mountRef.current.closest('.fliphtml5-stage-area');
-    const resize = () => {
-      const scale = Math.min((area.clientWidth - 80) / 960, (area.clientHeight - 52) / 640, 1.25);
-      mountRef.current.style.setProperty('--reader-scale', Math.max(0.1, scale));
-    };
-    const observer = new ResizeObserver(resize);
-    observer.observe(area);
-    resize();
-    return () => observer.disconnect();
   }, []);
 
   // Fullscreen change listener
@@ -166,8 +167,24 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
     window.print();
   };
 
+  const handleExportHtml = async () => {
+    if (exportBusy || !pages.length) return;
+    setExportBusy(true);
+    try {
+      const css = [...document.styleSheets].flatMap(sheet => { try { return [...sheet.cssRules].map(rule => rule.cssText); } catch { return []; } }).join('\n');
+      const blob = await StandaloneExporter.export({ title: catalogTitle, pages, soundProfile, soundEnabled, appearance }, css);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'catalogo-raia.html'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('Sfogliabile HTML scaricato: aprilo anche senza connessione.');
+    } catch { showToast('Esportazione HTML non riuscita. Riprova.'); }
+    finally { setExportBusy(false); }
+  };
+
   const handleQuickDownloadPdf = async () => {
-    if (pages.length === 0) return;
+    if (pages.length === 0 || pdfBusy) return;
+    setPdfBusy(true);
+    setPdfResult(null);
     showToast('Generazione PDF in corso...');
     try {
       const blob = await PDFBuilder.generate(pages, { title: catalogTitle });
@@ -179,51 +196,54 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
+      setPdfResult({ url, filename, size: blob.size });
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 300000);
       showToast('PDF scaricato con successo!');
     } catch (e) {
+      setPdfResult({ error: e.message });
       showToast('Errore durante la creazione del PDF.');
-    }
+    } finally { setPdfBusy(false); }
   };
 
   const goToPage = (index) => {
-    const spreadIdx = index === 0 ? 0 : Math.ceil(index / 2);
-    engineRef.current?.goToSpread(spreadIdx);
+    engineRef.current?.goToPage(index + 1);
   };
 
   return (
-    <div className={`fliphtml5-wrapper theme-${theme}`}>
+    <div className={`fliphtml5-wrapper theme-${theme} ${appearance.showArrows === false ? "hide-reader-arrows" : ""} ${appearance.showThumbnails === false ? "hide-reader-thumbs" : ""} ${appearance.showDownload === false ? "hide-reader-downloads" : ""}`} style={{ background: appearance.backgroundImage ? `url("${appearance.backgroundImage}") center / cover` : appearance.background, "--raia-red": appearance.accent, "--reader-toolbar": appearance.toolbar }}>
       {/* FlipHTML5 Top Branding Bar */}
       <div className="fliphtml5-topbar">
         <div className="fliphtml5-top-brand">
-          <span className="reader-edition">RAIA / DIGITAL EDITIONS</span>
+          <img className="reader-logo" src={appearance.logo || "/raia-logo.png"} alt="Logo del catalogo" />
           <span className="fliphtml5-top-title">{catalogTitle || 'Raia Prestige Lookbook'}</span>
         </div>
 
         <div className="fliphtml5-top-actions">
+          <button className="fliphtml5-top-btn reader-export-html reader-download" onClick={handleExportHtml} disabled={exportBusy || !pages.length}><Download size={15} /><span>{exportBusy ? "Preparazione…" : "Scarica HTML"}</span></button>
           <button
             className="fliphtml5-top-btn"
             onClick={() => setIsShareModalOpen(true)}
             title="Condividi o incorpora flipbook"
           >
             <Share2 size={15} />
-            <span>Condividi</span>
+            <span>Link / Incorpora</span>
           </button>
 
           <button
             className="fliphtml5-top-btn"
             onClick={handleQuickDownloadPdf}
-            title="Scarica PDF"
+            title="Scarica PDF" data-download="true"
           >
             <Download size={15} />
-            <span>PDF</span>
+            <span>{pdfBusy ? "Preparazione PDF…" : "Scarica PDF"}</span>
           </button>
         </div>
       </div>
 
+      {pdfResult && <div className="pdf-result">{pdfResult.error ? `Errore PDF: ${pdfResult.error}` : <a href={pdfResult.url} download={pdfResult.filename}>PDF pronto ({Math.round(pdfResult.size / 1024)} KB) · Clicca qui se il download non parte</a>}</div>}
       {/* FlipHTML5 Central Stage Area */}
       <div className="fliphtml5-stage-area">
         {pages.length === 0 ? (
@@ -237,7 +257,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
             <button
               className="fliphtml5-side-nav fliphtml5-side-prev"
               onClick={handlePrev}
-              disabled={currentSpread <= 0}
+              disabled={actualPage <= 0}
               title="Pagina precedente"
             >
               <ChevronLeft size={36} />
@@ -252,7 +272,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
             <button
               className="fliphtml5-side-nav fliphtml5-side-next"
               onClick={handleNext}
-              disabled={currentSpread >= totalSpreads - 1}
+              disabled={atEnd}
               title="Pagina successiva"
             >
               <ChevronRight size={36} />
@@ -281,7 +301,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
               </button>
 
               <button
-                className={`fh5-btn ${isThumbnailsOpen ? 'active' : ''}`}
+                data-thumbnails="true" className={`fh5-btn ${isThumbnailsOpen ? 'active' : ''}`}
                 onClick={() => {
                   setIsThumbnailsOpen(!isThumbnailsOpen);
                   setIsTocOpen(false);
@@ -383,7 +403,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
               <button
                 className="fh5-btn"
                 onClick={() => setIsShareModalOpen(true)}
-                title="Condividi & QR Code"
+                title="Link e codice HTML"
               >
                 <Share2 size={18} />
               </button>

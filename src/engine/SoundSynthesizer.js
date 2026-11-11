@@ -5,7 +5,7 @@ export class SoundSynthesizer {
   constructor() {
     this.ctx = null;
     this.enabled = true;
-    this.volume = 0.75;
+    this.volume = 0.65;
     this.profile = 'luxury'; // 'luxury' (glossy art catalog), 'heavy' (thick cardstock), 'soft' (delicate silk paper)
   }
 
@@ -45,18 +45,18 @@ export class SoundSynthesizer {
 
     let duration = 0.38 / Math.max(0.6, speed);
     let centerFreq = 2200;
-    let bandQ = 1.8;
+    let bandQ = 0.7;
     let thumpGainVal = 0.28;
 
     if (this.profile === 'heavy') {
       duration = 0.46 / Math.max(0.6, speed);
       centerFreq = 1600;
-      bandQ = 2.2;
+      bandQ = 0.9;
       thumpGainVal = 0.42;
     } else if (this.profile === 'soft') {
       duration = 0.32 / Math.max(0.6, speed);
       centerFreq = 3000;
-      bandQ = 1.4;
+      bandQ = 0.5;
       thumpGainVal = 0.16;
     }
 
@@ -71,9 +71,9 @@ export class SoundSynthesizer {
 
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
-      output[i] = (lastOut + 0.02 * white) / 1.02;
+      output[i] = (lastOut + 0.14 * white) / 1.14;
       lastOut = output[i];
-      output[i] *= 3.5;
+      output[i] *= 2.2;
     }
 
     const noiseNode = this.ctx.createBufferSource();
@@ -91,9 +91,9 @@ export class SoundSynthesizer {
 
     const envelope = this.ctx.createGain();
     envelope.gain.setValueAtTime(0.001, now);
-    envelope.gain.linearRampToValueAtTime(0.55 * this.volume, now + duration * 0.25);
-    envelope.gain.setValueAtTime(0.48 * this.volume, now + duration * 0.45);
-    envelope.gain.linearRampToValueAtTime(0.6 * this.volume, now + duration * 0.65);
+    envelope.gain.linearRampToValueAtTime(0.55, now + duration * 0.25);
+    envelope.gain.setValueAtTime(0.48, now + duration * 0.45);
+    envelope.gain.linearRampToValueAtTime(0.6, now + duration * 0.65);
     envelope.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
     noiseNode.connect(bandpass);
@@ -122,7 +122,7 @@ export class SoundSynthesizer {
     const thumpEnvelope = this.ctx.createGain();
     const thumpTime = now + duration * 0.72;
     thumpEnvelope.gain.setValueAtTime(0.001, thumpTime);
-    thumpEnvelope.gain.linearRampToValueAtTime(thumpGainVal * this.volume, thumpTime + 0.015);
+    thumpEnvelope.gain.linearRampToValueAtTime(thumpGainVal, thumpTime + 0.015);
     thumpEnvelope.gain.exponentialRampToValueAtTime(0.001, thumpTime + 0.1);
 
     thumpSource.connect(thumpFilter);

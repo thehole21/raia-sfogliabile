@@ -1,3 +1,4 @@
+import { renderPage } from './renderPage.js';
 // Client-Side Zero-Dependency High Resolution PDF Compiler
 // ISO 32000 compliant
 
@@ -36,10 +37,10 @@ export class PDFBuilder {
     const processedImages = [];
     for (let i = 0; i < pagesList.length; i++) {
       try {
-        const imgInfo = await this.processImage(pagesList[i].src);
+        const imgInfo = await this.processImage(await renderPage(pagesList[i]));
         processedImages.push({ info: imgInfo, meta: pagesList[i] });
       } catch (e) {
-        console.warn('PDF page processing error:', e);
+        throw new Error(`Impossibile esportare la pagina ${i + 1}: ${e.message}`);
       }
     }
 
