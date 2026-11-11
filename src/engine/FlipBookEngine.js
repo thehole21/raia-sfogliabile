@@ -171,6 +171,7 @@ export class FlipBookEngine {
 
     this.turner.style.display = 'none';
     this.turner.style.transform = 'none';
+    this.applyTransform();
 
     if (typeof this.options.onPageChange === 'function') {
       this.options.onPageChange({
@@ -324,7 +325,8 @@ export class FlipBookEngine {
   }
 
   applyTransform() {
-    this.book.style.transform = `scale(${this.zoomLevel}) translate(${this.panX}px, ${this.panY}px)`;
+    const offset = this.book.classList.contains('fb-state-closed-start') ? -240 : this.book.classList.contains('fb-state-closed-end') ? 240 : 0;
+    this.book.style.transform = `scale(${this.zoomLevel}) translate(${this.panX + offset}px, ${this.panY}px)`;
   }
 
   bindEvents() {

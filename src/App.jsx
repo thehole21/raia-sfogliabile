@@ -7,7 +7,7 @@ import { Toast } from './components/Toast.jsx';
 import { DemoCatalogGenerator } from './utils/demoData.js';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('studio');
+  const [activeTab, setActiveTab] = useState('viewer');
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
@@ -160,7 +160,7 @@ export function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container mode-${activeTab}`}>
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}

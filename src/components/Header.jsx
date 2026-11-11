@@ -21,7 +21,7 @@ export function Header({ activeTab, setActiveTab, onLoadDemo, onPreview }) {
           onClick={() => setActiveTab('studio')}
         >
           <Edit3 size={16} />
-          <span>Studio & Impaginazione</span>
+          <span>Personalizza</span>
         </button>
 
         <button
@@ -32,7 +32,7 @@ export function Header({ activeTab, setActiveTab, onLoadDemo, onPreview }) {
           }}
         >
           <BookOpen size={16} />
-          <span>Sfogliabile 3D</span>
+          <span>Sfoglia</span>
         </button>
 
         <button
@@ -40,14 +40,14 @@ export function Header({ activeTab, setActiveTab, onLoadDemo, onPreview }) {
           onClick={() => setActiveTab('export')}
         >
           <Share2 size={16} />
-          <span>Condividi & Esporta</span>
+          <span>Esporta</span>
         </button>
       </nav>
 
       <div className="header-actions">
         <button className="btn-secondary" onClick={onLoadDemo} title="Carica catalogo demo di Raia">
           <Sparkles size={16} />
-          <span>Carica Demo Raia</span>
+          <span>Catalogo demo</span>
         </button>
 
         <button
@@ -58,7 +58,7 @@ export function Header({ activeTab, setActiveTab, onLoadDemo, onPreview }) {
           }}
         >
           <Eye size={16} />
-          <span>Sfoglia Libro</span>
+          <span>Anteprima</span>
         </button>
       </div>
     </header>

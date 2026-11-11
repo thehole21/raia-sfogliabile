@@ -66,10 +66,27 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
     engineRef.current.setSoundEnabled(soundEnabled);
     engineRef.current.loadPages(pages);
 
-    return () => {
-      if (autoplayTimerRef.current) clearInterval(autoplayTimerRef.current);
-    };
+
   }, [pages, soundProfile]);
+
+  useEffect(() => () => {
+    clearInterval(autoplayTimerRef.current);
+    engineRef.current?.destroy();
+    engineRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+    const area = mountRef.current.closest('.fliphtml5-stage-area');
+    const resize = () => {
+      const scale = Math.min((area.clientWidth - 80) / 960, (area.clientHeight - 52) / 640, 1.25);
+      mountRef.current.style.setProperty('--reader-scale', Math.max(0.1, scale));
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(area);
+    resize();
+    return () => observer.disconnect();
+  }, []);
 
   // Fullscreen change listener
   useEffect(() => {
@@ -182,7 +199,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
       {/* FlipHTML5 Top Branding Bar */}
       <div className="fliphtml5-topbar">
         <div className="fliphtml5-top-brand">
-          <img src="/raia-logo.png" alt="Raia" className="fliphtml5-top-logo" />
+          <span className="reader-edition">RAIA / DIGITAL EDITIONS</span>
           <span className="fliphtml5-top-title">{catalogTitle || 'Raia Prestige Lookbook'}</span>
         </div>
 
@@ -244,6 +261,8 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
         )}
       </div>
 
+      <div className="reader-hint">Scorri o tocca le pagine per sfogliare · Usa le frecce della tastiera</div>
+      <div className="reader-progress" aria-hidden="true"><span style={{ width: `${totalSpreads > 1 ? currentSpread / (totalSpreads - 1) * 100 : 100}%` }} /></div>
       {/* FlipHTML5 Classic Bottom Navigation Bar */}
       {pages.length > 0 && (
         <div className="fliphtml5-bottom-bar">
@@ -434,7 +453,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
                   <img src={p.src} alt={p.title || `Pagina ${idx + 1}`} />
                 </div>
                 <span className="fh5-ribbon-label">
-                  {idx === 0 ? 'Copertina' : (idx === pages.length - 1 ? 'Retro' : `Pag. ${idx}`)}
+                  {idx === 0 ? 'Copertina' : (idx === pages.length - 1 ? 'Retro' : `Pag. ${idx + 1}`)}
                 </span>
               </div>
             );
