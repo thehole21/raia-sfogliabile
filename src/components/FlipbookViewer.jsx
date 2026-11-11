@@ -29,6 +29,7 @@ import {
 export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showToast, appearance = {}, initialPage = 0 }) {
   const mountRef = useRef(null);
   const engineRef = useRef(null);
+  const [htmlResult, setHtmlResult] = useState(null);
   const [pdfResult, setPdfResult] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
@@ -151,7 +152,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
         } else {
           engineRef.current.next();
         }
-      }, 4200);
+      }, (appearance.autoplaySeconds || 4) * 1000);
     }
   };
 
@@ -174,8 +175,9 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
       const css = [...document.styleSheets].flatMap(sheet => { try { return [...sheet.cssRules].map(rule => rule.cssText); } catch { return []; } }).join('\n');
       const blob = await StandaloneExporter.export({ title: catalogTitle, pages, soundProfile, soundEnabled, appearance }, css);
       const url = URL.createObjectURL(blob);
+      setHtmlResult({url});
       const a = document.createElement('a'); a.href = url; a.download = 'catalogo-raia.html'; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 300000);
       showToast('Sfogliabile HTML scaricato: aprilo anche senza connessione.');
     } catch { showToast('Esportazione HTML non riuscita. Riprova.'); }
     finally { setExportBusy(false); }
@@ -213,11 +215,11 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
   };
 
   return (
-    <div className={`fliphtml5-wrapper theme-${theme} ${appearance.showArrows === false ? "hide-reader-arrows" : ""} ${appearance.showThumbnails === false ? "hide-reader-thumbs" : ""} ${appearance.showDownload === false ? "hide-reader-downloads" : ""}`} style={{ background: appearance.backgroundImage ? `url("${appearance.backgroundImage}") center / cover` : appearance.background, "--raia-red": appearance.accent, "--reader-toolbar": appearance.toolbar }}>
+    <div className={`fliphtml5-wrapper theme-${theme} ${appearance.showArrows === false ? "hide-reader-arrows" : ""} ${appearance.showThumbnails === false ? "hide-reader-thumbs" : ""} ${appearance.showDownload === false ? "hide-reader-downloads" : ""} ${['Toc','Zoom','Sound','Autoplay','Print','Share','Fullscreen'].filter(key => appearance['show' + key] === false).map(key => 'hide-reader-' + key.toLowerCase()).join(' ')}`} style={{ background: appearance.backgroundImage ? `url("${appearance.backgroundImage}") center / cover` : appearance.background, "--raia-red": appearance.accent, "--reader-toolbar": appearance.toolbar, "--reader-logo-size": `${appearance.logoSize || 56}px` }}>
       {/* FlipHTML5 Top Branding Bar */}
       <div className="fliphtml5-topbar">
         <div className="fliphtml5-top-brand">
-          <img className="reader-logo" src={appearance.logo || "/raia-logo.png"} alt="Logo del catalogo" />
+          <img className="reader-logo" src={appearance.logo || "/raia-monogram.svg"} alt="Logo del catalogo" />
           <span className="fliphtml5-top-title">{catalogTitle || 'Raia Prestige Lookbook'}</span>
         </div>
 
@@ -226,7 +228,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
           <button
             className="fliphtml5-top-btn"
             onClick={() => setIsShareModalOpen(true)}
-            title="Condividi o incorpora flipbook"
+            data-tool="share" title="Condividi o incorpora flipbook"
           >
             <Share2 size={15} />
             <span>Link / Incorpora</span>
@@ -243,6 +245,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
         </div>
       </div>
 
+      {htmlResult && <div className="pdf-result"><a href={htmlResult.url} download="catalogo-raia.html">HTML pronto · Scarica lo sfogliabile</a></div>}
       {pdfResult && <div className="pdf-result">{pdfResult.error ? `Errore PDF: ${pdfResult.error}` : <a href={pdfResult.url} download={pdfResult.filename}>PDF pronto ({Math.round(pdfResult.size / 1024)} KB) · Clicca qui se il download non parte</a>}</div>}
       {/* FlipHTML5 Central Stage Area */}
       <div className="fliphtml5-stage-area">
@@ -295,7 +298,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
                   setIsTocOpen(!isTocOpen);
                   setIsThumbnailsOpen(false);
                 }}
-                title="Sommario & Indice Capitoli"
+                data-tool="toc" title="Sommario & Indice Capitoli"
               >
                 <List size={18} />
               </button>
@@ -371,7 +374,7 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
               <button
                 className={`fh5-btn ${isPlaying ? 'active' : ''}`}
                 onClick={toggleAutoplay}
-                title={isPlaying ? 'Pausa Presentazione' : 'Riproduci Presentazione Automatica'}
+                data-tool="autoplay" title={isPlaying ? 'Pausa Presentazione' : 'Riproduci Presentazione Automatica'}
               >
                 {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               </button>
@@ -379,36 +382,36 @@ export function FlipbookViewer({ pages, soundProfile, theme, catalogTitle, showT
               <button
                 className="fh5-btn"
                 onClick={toggleSound}
-                title={soundEnabled ? 'Disattiva Suono Carta' : 'Attiva Suono Carta'}
+                data-tool="sound" title={soundEnabled ? 'Disattiva Suono Carta' : 'Attiva Suono Carta'}
               >
                 {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
               </button>
 
-              <button className="fh5-btn" onClick={handleZoomIn} title="Ingrandisci (Zoom In)">
+              <button className="fh5-btn" data-tool="zoom" onClick={handleZoomIn} title="Ingrandisci (Zoom In)">
                 <ZoomIn size={18} />
               </button>
 
-              <button className="fh5-btn" onClick={handleZoomOut} title="Riduci (Zoom Out)">
+              <button className="fh5-btn" data-tool="zoom" onClick={handleZoomOut} title="Riduci (Zoom Out)">
                 <ZoomOut size={18} />
               </button>
 
-              <button className="fh5-btn" onClick={handleZoomReset} title="Ripristina 100%">
+              <button className="fh5-btn" data-tool="zoom" onClick={handleZoomReset} title="Ripristina 100%">
                 <RotateCcw size={16} />
               </button>
 
-              <button className="fh5-btn" onClick={handlePrint} title="Stampa Catalogo">
+              <button className="fh5-btn" data-tool="print" onClick={handlePrint} title="Stampa Catalogo">
                 <Printer size={18} />
               </button>
 
               <button
                 className="fh5-btn"
                 onClick={() => setIsShareModalOpen(true)}
-                title="Link e codice HTML"
+                data-tool="share" title="Link e codice HTML"
               >
                 <Share2 size={18} />
               </button>
 
-              <button className="fh5-btn" onClick={toggleFullscreen} title="Schermo Intero">
+              <button className="fh5-btn" data-tool="fullscreen" onClick={toggleFullscreen} title="Schermo Intero">
                 {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
               </button>
             </div>

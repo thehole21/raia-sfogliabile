@@ -7,7 +7,7 @@ import { Toast } from './components/Toast.jsx';
 import { DemoCatalogGenerator } from './utils/demoData.js';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('viewer');
+  const [activeTab, setActiveTab] = useState('studio');
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
@@ -15,7 +15,7 @@ export function App() {
     title: 'Raia Prestige Lookbook',
     subtitle: 'Design, Stampa e Comunicazione',
     theme: 'raia-dark',
-    appearance: { background: '#c8c9cc', accent: '#852233', toolbar: '#292a2d', logo: '/raia-logo.png', duration: 420, volume: .65, showArrows: true, showThumbnails: true, showDownload: true },
+    appearance: { background: '#c8c9cc', accent: '#852233', toolbar: '#292a2d', logo: '/raia-monogram.svg', realistic: true, shadow: .45, hardCover: true, paperColor: '#fffdf8', duration: 420, volume: .65, showArrows: true, showThumbnails: true, showDownload: true },
     soundProfile: 'luxury',
     soundEnabled: true,
     pages: []

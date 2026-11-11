@@ -35,13 +35,7 @@ export function Header({ activeTab, setActiveTab, onLoadDemo, onPreview }) {
           <span>Sfoglia</span>
         </button>
 
-        <button
-          className={`tab-btn ${activeTab === 'export' ? 'active' : ''}`}
-          onClick={() => setActiveTab('export')}
-        >
-          <Share2 size={16} />
-          <span>Esporta</span>
-        </button>
+
       </nav>
 
       <div className="header-actions">

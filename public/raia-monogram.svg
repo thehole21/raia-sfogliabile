@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" fill="#852233" />
+  <!-- Stylized R from Raia emblem -->
+  <path d="M 28 26 C 36 24 58 24 64 36 C 68 44 64 54 52 57 C 62 66 68 76 72 84 L 56 84 C 52 76 46 66 40 60 L 40 84 L 28 84 Z M 40 36 L 40 49 C 46 49 54 48 54 42 C 54 36 46 36 40 36 Z" fill="#ffffff" />
+</svg>

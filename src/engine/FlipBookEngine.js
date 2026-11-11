@@ -1,3 +1,4 @@
+import { createPageNode } from './pageModel.js';
 import { PageFlip } from 'page-flip';
 import { SoundSynthesizer } from './SoundSynthesizer.js';
 
@@ -26,35 +27,12 @@ export class FlipBookEngine {
     this.root = document.createElement('div');
     this.root.className = 'raia-pageflip';
     this.container.replaceChildren(this.root);
-    const elements = pages.map((page) => {
-      const node = document.createElement('div');
-      node.className = 'raia-paper';
-      const image = document.createElement('img');
-      image.src = page.src;
-      image.alt = page.title || 'Pagina del catalogo';
-      image.draggable = false;
-      if (page.blank) node.style.background = page.background || '#ffffff';
-      else node.append(image);
-      for (const item of page.elements || []) {
-        const el = document.createElement(item.type === 'link' ? 'a' : item.type === 'image' ? 'img' : 'div');
-        el.className = 'raia-page-element';
-        Object.assign(el.style, { left: item.x + '%', top: item.y + '%', width: item.width + '%', fontSize: (item.fontSize || 24) / 480 * 100 + 'cqw', color: item.color || '#222', fontWeight: item.bold ? '700' : '400', textAlign: item.align || 'left', background: item.background || 'transparent' });
-        if (item.type === 'image') el.src = item.src;
-        else el.textContent = item.text;
-        if (item.type === 'link') {
-          try { const url = new URL(item.url); if (['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol)) { el.href = url.href; el.target = '_blank'; el.rel = 'noopener noreferrer'; } } catch {}
-          el.addEventListener('pointerdown', e => e.stopPropagation());
-          el.addEventListener('click', e => e.stopPropagation());
-        }
-        node.append(el);
-      }
-      return node;
-    });
+    const elements = pages.map(createPageNode);
     this.root.append(...elements);
     this.flip = new PageFlip(this.root, {
-      startPage: this.options.initialPage || 0, width: 480, height: 640, size: 'stretch', minWidth: 220, maxWidth: 900,
-      minHeight: 290, maxHeight: 1200, showCover: true, usePortrait: true,
-      flippingTime: this.appearance.duration || 420, maxShadowOpacity: .28, drawShadow: true,
+      startPage: this.options.initialPage || 0, width: 480, height: 640, size: 'stretch', minWidth: 220, maxWidth: 720,
+      minHeight: 290, maxHeight: 1200, showCover: this.appearance.hardCover !== false, usePortrait: true,
+      flippingTime: this.appearance.duration || 420, maxShadowOpacity: this.appearance.shadow ?? .45, drawShadow: true,
       mobileScrollSupport: false, showPageCorners: true, swipeDistance: 25,
       autoSize: false, clickEventForward: false
     });
@@ -88,7 +66,9 @@ export class FlipBookEngine {
   configure(appearance = {}) {
     this.appearance = appearance;
     this.sound.setVolume(appearance.volume ?? .65);
-    if (this.flip) this.flip.getSettings().flippingTime = Number(appearance.duration) || 420;
+    this.root?.classList.toggle("realistic-book", appearance.realistic !== false);
+    this.root?.style.setProperty("--book-paper", appearance.paperColor || "#fffdf8");
+    if (this.flip) { this.flip.getSettings().flippingTime = Number(appearance.duration) || 420; this.flip.getSettings().maxShadowOpacity = appearance.shadow ?? .45; }
   }
   getTotalSpreads() { return Math.ceil((this.pages.length + 1) / 2); }
   turn(direction) {

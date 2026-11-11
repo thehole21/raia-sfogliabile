@@ -1,334 +1,56 @@
-// Demo Catalog for Raia Design & Stampa
-
+import emblemSvg from '../assets/raia-monogram.svg?raw';
+const emblem = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(emblemSvg);
+const id = () => crypto.randomUUID();
+const text = (name, content, x, y, width, fontSize, color = '#222222', extra = {}) => ({ id:id(), name, type:'text', text:content, x,y,width,fontSize,color,fontFamily:'Arial', ...extra });
+const shape = (name, x,y,width,height,background,borderColor='#d4a359',borderWidth=0,extra={}) => ({ id:id(),name,type:'shape',shape:'rectangle',x,y,width,height,background,borderColor,borderWidth,...extra });
+const image = (name,src,x,y,width,height) => ({id:id(),name,type:'image',src,x,y,width,height,fit:'contain'});
+const folio = (n, color='#777777') => text('Numero pagina',String(n),8,94,84,6,color,{align:'right'});
 export class DemoCatalogGenerator {
-  static createPageCanvas(width, height, drawFn) {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    drawFn(ctx, width, height);
-    return canvas.toDataURL('image/jpeg', 0.92);
-  }
-
   static generate() {
-    const W = 1000;
-    const H = 1414; // A4 ratio
-    const pages = [];
-
-    // Page 1: Hardcover Front (Burgundy Raia Prestige)
-    const coverSrc = this.createPageCanvas(W, H, (ctx, w, h) => {
-      // Background gradient
-      const bg = ctx.createLinearGradient(0, 0, w, h);
-      bg.addColorStop(0, '#15171e');
-      bg.addColorStop(0.5, '#211317');
-      bg.addColorStop(1, '#0c0d11');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
-
-      // Elegant burgundy border frame
-      ctx.strokeStyle = 'rgba(133, 34, 51, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(60, 60, w - 120, h - 120);
-
-      // Inner thin gold frame
-      ctx.strokeStyle = 'rgba(212, 163, 89, 0.35)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(70, 70, w - 140, h - 140);
-
-      // Emblem circular badge
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(w / 2, 380, 100, 0, Math.PI * 2);
-      ctx.fillStyle = '#852233';
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#d4a359';
-      ctx.stroke();
-
-      // 'R' in badge
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 120px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('R', w / 2, 380);
-      ctx.restore();
-
-      // Top badge
-      ctx.fillStyle = '#d4a359';
-      ctx.font = '600 20px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '10px';
-      ctx.textAlign = 'center';
-      ctx.fillText('EDIZIONE PRESTIGE 2026', w / 2, 200);
-
-      // Main Brand Title
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 80px "Cormorant Garamond", Georgia, serif';
-      ctx.letterSpacing = '3px';
-      ctx.fillText('RAIA', w / 2, 590);
-
-      ctx.fillStyle = '#852233';
-      ctx.font = '600 24px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '6px';
-      ctx.fillText('DESIGN, STAMPA E COMUNICAZIONE', w / 2, 650);
-
-      // Subtitle
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '400 18px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '2px';
-      ctx.fillText('PORTFOLIO PROGETTI & FINITURE DI PREGIO', w / 2, 710);
-
-      // Bottom coordinates
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = '400 14px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '4px';
-      ctx.fillText('NAPOLI  |  MILANO  |  ROMA', w / 2, h - 100);
-    });
-
-    pages.push({
-      id: 'page-1',
-      src: coverSrc,
-      title: 'Raia Prestige Lookbook',
-      subtitle: 'Design, Stampa e Comunicazione',
-      type: 'cover',
-      isCover: true,
-      pageNumber: 1
-    });
-
-    // Page 2: Editorial Manifesto & Presentation
-    const page2Src = this.createPageCanvas(W, H, (ctx, w, h) => {
-      ctx.fillStyle = '#fcfcfc';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = '#852233';
-      ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '4px';
-      ctx.fillText('EDITORIALE // 01', 100, 130);
-
-      ctx.font = 'italic 52px "Cormorant Garamond", Georgia, serif';
-      ctx.fillStyle = '#111827';
-      ctx.fillText('Diamo corpo alle tue idee.', 100, 220);
-      ctx.fillText('Dalla carta all\'esperienza.', 100, 280);
-
-      // Burgundy bar
-      ctx.fillStyle = '#852233';
-      ctx.fillRect(100, 320, 100, 4);
-
-      ctx.font = '400 18px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = '#4b5563';
-      const lines = [
-        "In Raia uniamo l'eccellenza della stampa offset e digitale",
-        "alla maestria del graphic design contemporaneo.",
-        "",
-        "Ogni catalogo, packaging o materiale coordinato nasce",
-        "per comunicare l'unicità del brand attraverso carte speciali,",
-        "nobilitazioni a caldo, rilievi a secco e rilegature sartoriali.",
-        "",
-        "Questo sfogliabile digitale rappresenta il connubio perfetto",
-        "tra la precisione artigianale della stampa fisica e",
-        "l'accessibilità interattiva per i tuoi clienti in tutto il mondo."
-      ];
-      let y = 380;
-      for (const l of lines) {
-        ctx.fillText(l, 100, y);
-        y += 32;
-      }
-
-      // Feature highlights
-      y = 780;
-      const feats = [
-        { title: 'Stampa Fine Art & Nobilitazioni', desc: 'Lamine a caldo, serigrafia UV spessorata e rilievo' },
-        { title: 'Graphic Design & Identity', desc: 'Progettazione editoriale e packaging su misura' },
-        { title: 'Cataloghi Interattivi 3D', desc: 'Soluzioni digitali sfogliabili con link diretto per clienti' }
-      ];
-
-      for (const f of feats) {
-        ctx.fillStyle = '#852233';
-        ctx.beginPath();
-        ctx.arc(110, y - 6, 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#111827';
-        ctx.font = '600 18px "Plus Jakarta Sans", sans-serif';
-        ctx.fillText(f.title, 130, y);
-
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '400 14px "Plus Jakarta Sans", sans-serif';
-        ctx.fillText(f.desc, 130, y + 24);
-
-        y += 75;
-      }
-    });
-
-    pages.push({
-      id: 'page-2',
-      src: page2Src,
-      title: 'Editoriale Raia',
-      type: 'page',
-      pageNumber: 2
-    });
-
-    // Page 3: Brand Identity & Packaging Spreads
-    const page3Src = this.createPageCanvas(W, H, (ctx, w, h) => {
-      ctx.fillStyle = '#13151b';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = '#852233';
-      ctx.font = '600 14px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '4px';
-      ctx.fillText('PORTFOLIO // SELEZIONE 01', 90, 120);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 46px "Cormorant Garamond", Georgia, serif';
-      ctx.fillText('Packaging di Lusso & Scatole Rigide', 90, 185);
-
-      // Simulated luxury box photograph
-      const boxGrad = ctx.createLinearGradient(90, 240, w - 90, 800);
-      boxGrad.addColorStop(0, '#242a38');
-      boxGrad.addColorStop(0.5, '#191c24');
-      boxGrad.addColorStop(1, '#0e1015');
-      ctx.fillStyle = boxGrad;
-      ctx.fillRect(90, 230, w - 180, 560);
-
-      // Hot gold foil logo simulation on packaging
-      ctx.strokeStyle = '#d4a359';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(w / 2 - 140, 430, 280, 140);
-
-      ctx.fillStyle = '#d4a359';
-      ctx.font = '600 24px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '6px';
-      ctx.textAlign = 'center';
-      ctx.fillText('RAIA COUTURE', w / 2, 490);
-      ctx.font = '400 13px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '3px';
-      ctx.fillText('LIMITED LUXURY BOX', w / 2, 525);
-      ctx.textAlign = 'left';
-
-      // Caption
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '500 18px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('Finitura: Cartoncino accoppiato 2mm con carta materica Fedrigoni', 90, 840);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '400 15px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('Stampa a caldo in oro opaco, chiusura calamitata e fustellatura personalizzata.', 90, 875);
-    });
-
-    pages.push({
-      id: 'page-3',
-      src: page3Src,
-      title: 'Packaging Luxury',
-      type: 'page',
-      pageNumber: 3
-    });
-
-    // Page 4: Nobilitazioni e Campionario Carte
-    const page4Src = this.createPageCanvas(W, H, (ctx, w, h) => {
-      ctx.fillStyle = '#f8f8f9';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = '#852233';
-      ctx.font = '600 14px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '4px';
-      ctx.fillText('TECNICHE & NOBILITAZIONI // 02', 90, 120);
-
-      ctx.fillStyle = '#111827';
-      ctx.font = 'bold 44px "Cormorant Garamond", serif';
-      ctx.fillText('Carte Speciali & Trattamenti Superficiali', 90, 180);
-
-      // Swatches grid 2x2
-      const swW = (w - 220) / 2;
-      const swH = 260;
-
-      const swatches = [
-        { name: 'Lamina a Caldo Oro & Rame', color: '#1f242e', border: '#d4a359' },
-        { name: 'Vernice UV Serigrafica a Spessore', color: '#161922', border: '#852233' },
-        { name: 'Rilievo a Secco con Debossing', color: '#eef0f3', border: '#cbd5e1', dark: true },
-        { name: 'Brossura Filo Refe Dorata', color: '#2b2126', border: '#d4a359' }
-      ];
-
-      let sx = 90;
-      let sy = 230;
-
-      for (let i = 0; i < swatches.length; i++) {
-        const sw = swatches[i];
-        ctx.fillStyle = sw.color;
-        ctx.fillRect(sx, sy, swW, swH);
-
-        ctx.strokeStyle = sw.border;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(sx, sy, swW, swH);
-
-        ctx.fillStyle = sw.dark ? '#111827' : '#ffffff';
-        ctx.font = '600 16px "Plus Jakarta Sans", sans-serif';
-        ctx.fillText(sw.name, sx + 24, sy + swH - 24);
-
-        if (i % 2 === 0) {
-          sx += swW + 40;
-        } else {
-          sx = 90;
-          sy += swH + 40;
-        }
-      }
-
-      ctx.fillStyle = '#4b5563';
-      ctx.font = 'italic 16px "Cormorant Garamond", serif';
-      ctx.fillText('Ogni lavorazione viene calibrata per esaltare al massimo la resa visiva e tattile.', 90, 870);
-    });
-
-    pages.push({
-      id: 'page-4',
-      src: page4Src,
-      title: 'Nobilitazioni di Pregio',
-      type: 'page',
-      pageNumber: 4
-    });
-
-    // Page 5: Backcover (Hardcover Retro)
-    const backSrc = this.createPageCanvas(W, H, (ctx, w, h) => {
-      const bg = ctx.createLinearGradient(0, 0, w, h);
-      bg.addColorStop(0, '#0c0d11');
-      bg.addColorStop(0.5, '#1e1115');
-      bg.addColorStop(1, '#090a0d');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.strokeStyle = 'rgba(133, 34, 51, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(60, 60, w - 120, h - 120);
-
-      // Center logo text
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 54px "Cormorant Garamond", Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.letterSpacing = '4px';
-      ctx.fillText('RAIA', w / 2, h / 2 - 50);
-
-      ctx.fillStyle = '#852233';
-      ctx.font = '600 18px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '6px';
-      ctx.fillText('DESIGN, STAMPA E COMUNICAZIONE', w / 2, h / 2 + 5);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '400 15px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '2px';
-      ctx.fillText('www.raia.it  |  info@raia.it', w / 2, h / 2 + 65);
-
-      ctx.fillStyle = '#d4a359';
-      ctx.font = '400 13px "Plus Jakarta Sans", sans-serif';
-      ctx.letterSpacing = '3px';
-      ctx.fillText('CATALOGHI • PACKAGING • BRAND IDENTITY • DIGITAL FLIPBOOKS', w / 2, h / 2 + 110);
-    });
-
-    pages.push({
-      id: 'page-5',
-      src: backSrc,
-      title: 'Retro Copertina',
-      type: 'back',
-      isBack: true,
-      pageNumber: 5
-    });
-
-    return pages;
+    const cover = {id:'demo-cover',title:'Raia Prestige Lookbook',blank:true,background:'#15171e',gradient:true,backgroundEnd:'#25131a',gradientAngle:135,isCover:true,type:'cover',elements:[
+      shape('Cornice bordeaux',5,4,90,92,'transparent','#852233',1),shape('Filetto oro',6,5,88,90,'transparent','#b18a51',.5),
+      text('Edizione','EDIZIONE PRESTIGE 2026',12,12,76,9,'#d4a359',{align:'center',letterSpacing:2.4}),
+      image('Monogramma R',emblem,39,22,22,16.5),
+      text('Titolo RAIA','RAIA',10,42,80,42,'#ffffff',{fontFamily:'Georgia',bold:true,align:'center',letterSpacing:3}),
+      text('Descrizione brand','DESIGN, STAMPA E COMUNICAZIONE',12,53,76,9,'#d4a359',{align:'center',letterSpacing:1.4}),
+      text('Sottotitolo','PORTFOLIO PROGETTI & FINITURE DI PREGIO',10,59,80,7,'#b1a7ac',{align:'center',letterSpacing:1}),
+      text('Sedi','NAPOLI  |  MILANO  |  ROMA',10,88,80,7,'#b1a7ac',{align:'center',letterSpacing:2})
+    ]};
+    const editorial = {id:'demo-editorial',title:'Editoriale Raia',blank:true,background:'#fffdf9',elements:[
+      text('Etichetta','EDITORIALE / 01',9,8,82,7,'#852233',{bold:true,letterSpacing:1.5}),
+      text('Titolo editoriale',"Diamo corpo alle tue idee.\nDalla carta all’esperienza.",9,15,82,24,'#242329',{fontFamily:'Georgia',italic:true,lineHeight:1.15}),
+      shape('Linea editoriale',9,29,12,.3,'#852233'),
+      text('Presentazione',"In Raia uniamo l’eccellenza della stampa offset e digitale alla maestria del graphic design contemporaneo.\n\nOgni catalogo, packaging o materiale coordinato nasce per comunicare l’unicità del brand attraverso carte speciali, nobilitazioni a caldo, rilievi a secco e rilegature sartoriali.\n\nQuesto sfogliabile digitale unisce la precisione artigianale della stampa fisica all’accessibilità interattiva per i tuoi clienti.",9,33,82,9,'#62616a',{lineHeight:1.6}),
+      text('Servizio stampa','Stampa Fine Art & Nobilitazioni',12,65,78,10,'#25252a',{bold:true}),text('Dettaglio stampa','Lamine a caldo, serigrafia UV spessorata e rilievo',12,68,78,7,'#77747b'),
+      text('Servizio design','Graphic Design & Identity',12,74,78,10,'#25252a',{bold:true}),text('Dettaglio design','Progettazione editoriale e packaging su misura',12,77,78,7,'#77747b'),
+      text('Servizio digitale','Cataloghi interattivi',12,83,78,10,'#25252a',{bold:true}),text('Dettaglio digitale','Esperienze sfogliabili con link e contenuti multimediali',12,86,78,7,'#77747b'),
+      ...[66,75,84].map((y,i)=>shape('Punto elenco '+(i+1),9,y,1,0.75,'#852233','#852233',0,{shape:'ellipse'})),folio(2)
+    ]};
+    const packaging = {id:'demo-packaging',title:'Packaging Luxury',blank:true,background:'#14161d',elements:[
+      text('Etichetta portfolio','PORTFOLIO / SELEZIONE 01',9,8,82,7,'#bc7d85',{bold:true,letterSpacing:1.4}),
+      text('Titolo packaging','Packaging di Lusso\n& Scatole Rigide',9,14,82,23,'#ffffff',{fontFamily:'Georgia',bold:true,lineHeight:1.12}),
+      shape('Campione packaging',9,31,82,37,'#202531'),shape('Scatola',18,38,64,23,'#191c24','#35333a',1,{rotation:-3}),
+      shape('Lamina oro',33,44,34,11,'transparent','#d4a359',1),text('Logo sulla scatola','RAIA COUTURE',34,47,32,9,'#d4a359',{align:'center',letterSpacing:1.4}),text('Dicitura scatola','LIMITED LUXURY BOX',34,51,32,5,'#d4a359',{align:'center',letterSpacing:1}),
+      text('Didascalia packaging','Cartoncino accoppiato 2 mm\ncon carta materica Fedrigoni',9,73,82,11,'#ffffff',{lineHeight:1.5}),
+      text('Finiture packaging','Stampa a caldo in oro opaco, chiusura calamitata e fustellatura personalizzata.',9,81,82,8,'#9c9aa5',{lineHeight:1.6}),folio(3,'#9c9aa5')
+    ]};
+    const finishes = {id:'demo-finishes',title:'Nobilitazioni di Pregio',blank:true,background:'#f9f8f5',elements:[
+      text('Etichetta tecniche','TECNICHE & NOBILITAZIONI / 02',9,8,82,7,'#852233',{bold:true,letterSpacing:1.3}),
+      text('Titolo finiture','Carte Speciali\n& Trattamenti Superficiali',9,14,82,23,'#29272c',{fontFamily:'Georgia',bold:true,lineHeight:1.15}),
+      ...[{x:9,y:31,name:'Lamina a Caldo Oro & Rame',bg:'#24252c',edge:'#d4a359',color:'#f0ddba'}, {x:52,y:31,name:'Vernice UV a Spessore',bg:'#17191f',edge:'#852233',color:'#ffffff'}, {x:9,y:57,name:'Rilievo a Secco / Debossing',bg:'#eeebe6',edge:'#bfb9b1',color:'#444044'},{x:52,y:57,name:'Brossura Filo Refe Dorata',bg:'#34252a',edge:'#d4a359',color:'#e1c18e'}].flatMap((sw,i)=>[
+        shape('Campione '+(i+1),sw.x,sw.y,39,23,sw.bg,sw.edge,1),text('Sigla campione '+(i+1),'R',sw.x+4,sw.y+3,31,34,sw.color,{fontFamily:'Georgia',align:'center',bold:true}),text('Nome campione '+(i+1),sw.name,sw.x+3,sw.y+17,33,6.5,sw.color)
+      ]),
+      text('Nota lavorazioni','Ogni lavorazione viene calibrata per esaltare la resa visiva e tattile.',9,86,82,9,'#65616b',{fontFamily:'Georgia',italic:true}),folio(4)
+    ]};
+    const back = {id:'demo-back',title:'Retro Copertina',blank:true,background:'#101116',gradient:true,backgroundEnd:'#29141c',isBack:true,type:'back',elements:[
+      shape('Cornice retro',5,4,90,92,'transparent','#852233',1), image('Monogramma retro',emblem,42,29,16,12),
+      text('Brand retro','RAIA',10,46,80,30,'#ffffff',{fontFamily:'Georgia',bold:true,align:'center',letterSpacing:3}),
+      text('Descrizione retro','DESIGN, STAMPA E COMUNICAZIONE',10,55,80,8,'#d4a359',{align:'center',letterSpacing:1.3}),
+      {...text('Sito web','www.raia.it',20,63,60,10,'#c0b2ba',{align:'center'}),type:'link',url:'https://www.raia.it'},
+      {...text('Email','info@raia.it',20,68,60,9,'#c0b2ba',{align:'center'}),type:'link',url:'mailto:info@raia.it'},
+      text('Specializzazioni','CATALOGHI / PACKAGING / BRAND IDENTITY',10,85,80,6,'#d4a359',{align:'center',letterSpacing:1})
+    ]};
+    return [cover,editorial,packaging,finishes,back].map((page,index)=>({...page,pageNumber:index+1}));
   }
 }
+
